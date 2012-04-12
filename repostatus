@@ -79,7 +79,7 @@ results.sort_by { |r| r[:count] }.each do |result|
   first = case result[:type]
   when :git
     if result[:no_remotes]
-      "git!"
+      "git !remote"
     else
       "git"
     end
