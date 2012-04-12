@@ -1,0 +1,87 @@
+#!/usr/bin/env ruby
+
+base = Dir.pwd + '/'
+
+results = []
+
+VERBOSE = ARGV.include?('-v')
+SHOW_UNVERSIONED = ARGV.include?('-u')
+
+if ARGV.include?('-h') || ARGV.include?('--help')
+  puts "Usage: #{$0} [-v] [-h|--help] [-u]"
+  exit
+end
+
+unversioned = []
+
+look = proc do
+  entries = Dir.glob('*').select { |dir| File.directory?(dir) }
+  
+  something_is_versioned = false    
+  normal_dirs = []
+  
+  entries.each do |dir|
+    
+    Dir.chdir(dir) do
+      if File.exists?('.svn')
+        something_is_versioned = true
+        if changes = %x[svn status].split("\n").map { |c| c.strip.split(/\S+/,2).map(&:strip!) } and changes.any?
+          results << { :type => :svn, :dir => Dir.pwd, :count => changes.length, :changes => changes }
+        end
+        break
+      elsif File.exists?('.git')   
+        something_is_versioned = true     
+        if changes = %x[git status -s].split("\n").map { |c| c.strip.split(/\S+/,2).map(&:strip!) } and changes.any?
+          results << { :type => :git, :dir => Dir.pwd, :count => changes.length, :changes => changes }
+        end
+        break
+      else
+        normal_dirs << dir
+      end
+    end
+    
+  end
+  
+  normal_dirs.each do |dir|
+    Dir.chdir(dir) do
+      unless look.call
+        unversioned << Dir.pwd
+      end
+    end
+  end
+  
+  something_is_versioned # return value  
+end
+
+look.call
+
+tidy_unversioned = []
+if SHOW_UNVERSIONED
+  unversioned.sort.each do |a|
+    if last = tidy_unversioned.last 
+      if !a.start_with?(last)
+        tidy_unversioned << a
+      end
+    else
+      tidy_unversioned << a
+    end
+  end
+
+  tidy_unversioned.each do |dir|  
+    results << { :type => :unversioned, :dir => dir, :count => %x[find #{dir} | wc -l].strip.to_i   }
+  end
+end
+
+results.sort_by { |r| r[:count] }.each do |result|
+  dir = result[:dir].sub(/^#{Regexp.escape(base)}/,'')
+  puts "#{result[:type].to_s.ljust(12)} #{result[:count].to_s.rjust(5)} #{dir}"
+  if VERBOSE
+    puts '---------------------------------------------------'
+    if changes = result[:changes]
+      changes.each do |status,file|
+        puts " #{status} #{file}"
+      end
+    end
+    puts
+  end
+end
