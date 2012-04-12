@@ -31,8 +31,9 @@ look = proc do
         break
       elsif File.exists?('.git')   
         something_is_versioned = true     
-        if changes = %x[git status -s].split("\n").map { |c| c.strip.split(/\S+/,2).map(&:strip!) } and changes.any?
-          results << { :type => :git, :dir => Dir.pwd, :count => changes.length, :changes => changes }
+        remotes = %x[git remote].chomp.split("\n")
+        if (changes = %x[git status -s].split("\n").map { |c| c.strip.split(/\S+/,2).map(&:strip!) } and changes.any?) || remotes.none?
+          results << { :type => :git, :dir => Dir.pwd, :count => changes.length, :changes => changes, :no_remotes => remotes.none? }
         end
         break
       else
@@ -74,7 +75,20 @@ end
 
 results.sort_by { |r| r[:count] }.each do |result|
   dir = result[:dir].sub(/^#{Regexp.escape(base)}/,'')
-  puts "#{result[:type].to_s.ljust(12)} #{result[:count].to_s.rjust(5)} #{dir}"
+  
+  first = case result[:type]
+  when :git
+    if result[:no_remotes]
+      "git!"
+    else
+      "git"
+    end
+  else
+    result[:type]
+  end
+  
+  puts "#{first.to_s.ljust(12)} #{result[:count].to_s.rjust(5)} #{dir}"
+  
   if VERBOSE
     puts '---------------------------------------------------'
     if changes = result[:changes]
