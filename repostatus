@@ -8,7 +8,7 @@ VERBOSE = ARGV.include?('-v')
 SHOW_UNVERSIONED = ARGV.include?('-u')
 
 if ARGV.include?('-h') || ARGV.include?('--help')
-  puts "Usage: #{$0} [-v] [-h|--help] [-u]"
+  puts "Usage: #{File.basename($0)} [-v] [-h|--help] [-u]"
   exit
 end
 
