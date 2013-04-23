@@ -12,8 +12,8 @@ Ordered by number of uncommited changes ascending and runs from the current dire
 Example usage and output
 ---------
 
-# repostatus 
-git !remote      0 example/project/without/a/remote
-git !remote      1 another/but/with/one/uncommited/change
-svn             15 a/nice/svn/project/too
-git             87 this/really/needs/some/committing
+    # repostatus 
+    git !remote      0 example/project/without/a/remote
+    git !remote      1 another/but/with/one/uncommited/change
+    svn             15 a/nice/svn/project/too
+    git             87 this/really/needs/some/committing
